@@ -200,9 +200,9 @@ Router(config)# ip route [destination_network] [subnet_mask] [next_hop_IP]
 
 
 
--------------|
-#ADVANCED    |
--------------|
+-------------
+#ADVANCED    
+-------------
 
 ----------------NAT Demo-------------------------
 
@@ -342,20 +342,11 @@ ip access-group FILTER-ME in
 
 
 
-ftp 100.10.10.3
-web browser: 100.10.10.2
-
-** no ip access-list extended FILTER
-** show access-lists
-** show run
-** show ip int serial 0/0/0 | include access-list
 
 
 
 
-/24 ==> 111..111 XXXXXXXX ==> 00000000, 11111111
-/31 ==> 111111111111..11  X 
-/30 ==> point to point ==>                 00, 11, 01, 10
+
 
 
 
