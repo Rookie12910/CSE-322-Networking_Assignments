@@ -1,0 +1,373 @@
+-------------------------------------------------------------------------------------------
+#Router ip config 
+------------------
+
+enable
+config terminal
+interface g0/0
+ip address 192.168.1.1 255.255.255.0
+no shutdown
+exit
+
+
+-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------
+#VLAN config
+-----------------
+
+---------------
+->switch part
+---------------
+
+enable
+configure terminal
+
+vlan 10
+name Department_A
+exit
+
+vlan 20
+name Department_B
+exit
+
+interface FastEthernet0/1
+switchport mode access
+switchport access vlan 10
+exit
+
+interface FastEthernet0/3
+switchport mode access
+switchport access vlan 20
+exit
+
+interface GigabitEthernet0/1
+switchport mode trunk
+switchport trunk allowed vlan 10,20
+exit
+
+verify(switch part)->
+Switch# show vlan brief
+Switch# show interfaces trunk
+
+-----------------
+->router part
+-----------------
+
+enable
+configure terminal
+
+interface GigabitEthernet0/0.10
+encapsulation dot1Q 10
+ip address 192.168.10.1 255.255.255.0
+exit
+
+interface GigabitEthernet0/0.20
+encapsulation dot1Q 20
+ip address 192.168.20.1 255.255.255.0
+exit
+
+interface GigabitEthernet0/0
+no shutdown
+exit
+
+verify(router part)->
+Router# show ip interface brief
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+
+
+
+
+#VLAN using layer3 switch
+--------------------------
+Switch(config)# vlan 10
+Switch(config-vlan)# name VLAN10
+Switch(config-vlan)# exit
+Switch(config)# vlan 20
+Switch(config-vlan)# name VLAN20
+Switch(config-vlan)# exit
+Switch(config)# interface vlan 10
+Switch(config-if)# ip address 192.168.10.1 255.255.255.0
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+Switch(config)# interface vlan 20
+Switch(config-if)# ip address 192.168.20.1 255.255.255.0
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+Switch(config)# interface gigabitEthernet 1/0/6
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 10
+Switch(config-if)# exit
+Switch(config)# interface gigabitEthernet 1/0/18
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 20
+Switch(config-if)# exit
+Switch(config)# ip routing
+
+
+(Switch 3560)
+
+------------------------------------------------------------------------------------
+
+#more VLAN commands
+-------------------
+show vlan [brief| id vlan-id | name vlan-name | summary]
+Switchport trunk native vlan 99
+no switchport access vlan (Before deleting a VLAN, reassign all member ports to a different)
+Delete all VLANs with the delete flash:vlan.dat or delete vlan.dat commands.
+show interface fa0/18 switchport
+
+
+
+#OTHERS
+----------
+Router# show ip interface brief
+
+int g0/0.10
+ip nat inside
+
+
+int g0/0.10
+ip access-group FILTER-CSE in
+
+
+Password for Console :
+
+    line console 0
+    password 123
+    login
+
+Password for Switch :
+  enable secret 12
+  exit
+   
+Encrypt Passwords:
+   configure terminal
+   service password-encryption
+   exit
+
+Banner Messages:
+   configure terminal
+  banner motd #This is our packer trace online#
+
+copy running-config startup-config
+
+
+20: FTP data transfer
+21: FTP control (for establishing FTP connections)
+22: SSH (Secure Shell, for secure remote login)
+23: Telnet (unsecured remote login)
+53: DNS (Domain Name System, used for resolving domain names)
+80: HTTP (Hypertext Transfer Protocol, standard web browsing)
+443: HTTPS (HTTP Secure, secure web browsing)
+
+
+------------------------------------------------------------------------------------------
+#Static NAT
+-----------
+Router> enable
+Router# configure terminal
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# ip address [internal_IP] [subnet_mask]
+Router(config-if)# ip nat inside
+Router(config-if)# exit
+Router(config)# interface GigabitEthernet0/1
+Router(config-if)# ip address [external_IP] [subnet_mask]
+Router(config-if)# ip nat outside
+Router(config-if)# exit
+Router(config)# ip nat inside source static [inside_local_IP] [inside_global_IP]
+Router(config)# end
+Router# write memory
+
+----------
+Next Hop : 
+----------
+Router(config)# ip route [destination_network] [subnet_mask] [next_hop_IP]
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+-------------|
+#ADVANCED    |
+-------------|
+
+----------------NAT Demo-------------------------
+
+NAT Router------------------
+
+enable
+conf t
+int g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown 
+
+int g0/1
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+next router:
+
+int g0/0
+ip address 100.10.10.1 255.255.255.0
+no shutdown 
+
+Serial DCE-------------------
+100.2.2.0/30
+Point-to-point link
+
+int s0/0/0
+ip address 100.2.2.1 255.255.255.252
+clock rate 64000
+no shutdown
+
+int s0/0/0
+ip address 100.2.2.2 255.255.255.252
+no shutdown
+
+Servers----------------------
+100.10.10.0/24
+setup default route and interface ip
+
+
+static routing---------------
+NAT Router
+ip route 0.0.0.0 0.0.0.0 s0/0/0
+R2
+ip route 0.0.0.0 0.0.0.0 s0/0/0
+
+Dynamic NAT--------------------
+
+int g0/0
+ip nat inside
+int g0/1
+ip nat inside
+int s0/0/0
+ip nat outside
+
+ip nat pool BUETpool 209.175.200.5 209.175.200.10 netmask 255.255.255.224
+access-list 1 permit 192.168.10.0 0.0.0.255
+access-list 1 permit 192.168.20.0 0.0.0.255
+ip nat inside source list 1 pool BUETpool
+
+ip nat inside source list 1 pool BUETpool overload
+
+**
+show running-config | include ip nat
+
+** show ip nat translations 
+** clear ip nat translation *
+
+show ip nat statistics
+clear ip nat statistics
+
+
+Transport layer port numbers 
+
+
+ACL-------------------------------
+Router --> per interface --> inbound, outbound (EXPLAIN) * IPv4, IPv6
+Standard ACL --> Src IP only, apply at dest
+Extended --> Destn Also, port, tc/udp, apply at source
+
+wildcard Example: 192.168.10.64 0.0.0.15 ==> 64 to 79
+
+
+Standard ACL: 1-99 -> src address, closest to the destination (no dest info so manually place at dest)
+
+============ Numbered ACL ===================
+define:
+access-list 10 permit host 192.168.10.2  ==> access-list 10 permit 192.168.10.2 0.0.0.0
+access-list 10 deny 192.168.10.0 0.0.0.255
+access-list 10 deny any (implicit/optional)
+
+apply:
+int s0/0/0
+ip access-group 10 out
+
+** no access-list 10
+** no ip access-group 10 out
+** do show access-lists
+** show run | section access-list
+============ Named ACL ==================== (must menton standard/extended, since no implicit number)
+
+
+define:
+ip access-list standard permit-access
+permit host 192.168.10.2
+deny 192.168.10.0 0.0.0.255
+permit 192.168.20.0 0.0.0.255
+
+apply:
+int s0/0/0
+ip access-group permit-access out
+
+
+host *ip*
+same as
+*ip* 0.0.0.0
+
+
+Extended ACL: 100-199-> src IP, dest IP, port, closest to the source
+
+
+ip access-list extended FILTER-CSE
+permit tcp 192.168.10.0 0.0.0.255 host 100.10.10.2 eq www
+deny tcp 192.168.10.0 0.0.0.255 host 100.10.10.3 eq ftp
+permit ip any any
+
+int g0/0
+ip access-group FILTER-CSE in
+
+ip access-list extended FILTER-ME
+permit tcp 192.168.20.0 0.0.0.255 host 100.10.10.3 eq ftp
+deny tcp 192.168.20.0 0.0.0.255 host 100.10.10.2 eq www
+permit ip any any
+
+int g0/1
+ip access-group FILTER-ME in
+
+
+
+
+ftp 100.10.10.3
+web browser: 100.10.10.2
+
+** no ip access-list extended FILTER
+** show access-lists
+** show run
+** show ip int serial 0/0/0 | include access-list
+
+
+
+
+/24 ==> 111..111 XXXXXXXX ==> 00000000, 11111111
+/31 ==> 111111111111..11  X 
+/30 ==> point to point ==>                 00, 11, 01, 10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
